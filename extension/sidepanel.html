@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Anji</title>
+  <link rel="icon" href="icons/angel-48.png">
+  <link rel="stylesheet" href="src/panel/panel.css">
+</head>
+<body>
+  <header class="bar">
+    <img class="mark" src="icons/angel.svg" alt="" width="30" height="28">
+    <strong class="wordmark">Anji</strong>
+    <span class="status" id="status" data-state="connecting">Connecting</span>
+  </header>
+  <div id="context" class="context"></div>
+  <main id="view" aria-live="polite"></main>
+  <section class="chat" id="chat" hidden aria-label="Conversation with Anji"></section>
+  <footer class="foot" id="foot"></footer>
+  <script src="src/shared/diff.js"></script>
+  <script type="module" src="src/panel/panel.js"></script>
+</body>
+</html>

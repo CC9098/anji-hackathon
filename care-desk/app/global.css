@@ -1,0 +1,377 @@
+@import "@fontsource-variable/inter";
+
+@import "tailwindcss";
+@import "@agent-native/toolkit/styles.css";
+
+@source "./**/*.{ts,tsx}";
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 0 0% 15%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 0 0% 15%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 95%;
+  --accent-foreground: 0 0% 15%;
+  --destructive: 0 91% 71%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 0 0% 40%;
+  --radius: 0.5rem;
+  --sidebar-background: 0 0% 97%;
+  --sidebar-foreground: 0 0% 45%;
+  --sidebar-primary: 0 0% 15%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 95%;
+  --sidebar-accent-foreground: 0 0% 15%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 0 0% 40%;
+  --chat-sidebar-width: 17.25rem;
+  --chat-sidebar-content-inset: 0.5rem;
+  --chat-sidebar-row-padding: 0.75rem;
+  --chat-sidebar-title-fade: 1.25rem;
+}
+
+.chat-layout-shell {
+  --agent-layout-left-drawer-expanded-width: var(--chat-sidebar-width);
+  --agent-native-lower-surface: var(--agent-kit-nav-surface);
+}
+
+.agentkit-chat-empty-copy {
+  text-align: center;
+}
+
+.agentkit-chat-empty-copy h1 {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.agent-kit-chat-footer-stack {
+  inline-size: min(100%, 47rem);
+  margin-inline: auto;
+  pointer-events: auto;
+}
+
+.agent-kit-chat-footer-stack > .agentkit-composer-stack {
+  inline-size: 100%;
+}
+
+.agent-kit-chat-guided-question {
+  max-block-size: min(32rem, 58dvh);
+  overflow: auto;
+  margin-block-end: 0.5rem;
+  border: 1px solid var(--agentkit-border);
+  border-radius: var(--agentkit-radius);
+  background: var(--agentkit-surface);
+  box-shadow: var(--agentkit-elevation);
+}
+
+.chat-sidebar-history .an-chat-history__list {
+  padding-top: 0;
+}
+
+.chat-sidebar-history .an-chat-history__section-label {
+  padding: 8px
+    calc(var(--chat-sidebar-content-inset) + var(--chat-sidebar-row-padding))
+    5px;
+  color: hsl(var(--sidebar-foreground) / 0.66);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.chat-sidebar-history.an-chat-history--rail .an-chat-history-row {
+  margin-inline: var(--chat-sidebar-content-inset);
+  border-radius: calc(var(--radius) + 2px);
+}
+
+.chat-sidebar-history.an-chat-history--rail .an-chat-history-row__button {
+  min-height: 34px;
+  padding-block: 7px;
+  padding-inline: var(--chat-sidebar-row-padding);
+  color: hsl(var(--sidebar-foreground));
+}
+
+.chat-sidebar-history.an-chat-history--rail
+  .an-chat-history-row--has-menu
+  .an-chat-history-row__button {
+  padding-inline-end: calc(var(--chat-sidebar-row-padding) + 1.5rem);
+}
+
+.chat-sidebar-history .an-chat-history-row__title {
+  flex: 1 1 auto;
+  color: hsl(var(--sidebar-accent-foreground));
+  font-size: 13px;
+  font-weight: 400;
+  text-overflow: clip;
+}
+
+.chat-sidebar-thread-title-shell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-sidebar-thread-title {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.chat-sidebar-thread-running {
+  color: hsl(var(--sidebar-foreground) / 0.72);
+}
+
+.chat-sidebar-thread-title[data-overflow="true"] {
+  mask-image: linear-gradient(
+    to right,
+    hsl(var(--foreground)) 0,
+    hsl(var(--foreground)) calc(100% - var(--chat-sidebar-title-fade)),
+    hsl(var(--foreground) / 0) 100%
+  );
+}
+
+.chat-sidebar-thread-title__content {
+  display: block;
+  width: max-content;
+  transform: translateX(0);
+}
+
+.an-chat-history-row:hover
+  .chat-sidebar-thread-title[data-overflow="true"]
+  .chat-sidebar-thread-title__content {
+  animation: chat-sidebar-title-reveal
+    var(--chat-sidebar-title-duration, 1800ms) ease-in-out 350ms;
+}
+
+.chat-sidebar-thread-details {
+  border-color: hsl(var(--sidebar-border));
+}
+
+.chat-sidebar-history.an-chat-history--rail
+  .an-chat-history-row__menu-trigger--pinned {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.chat-sidebar-history.an-chat-history--rail
+  .an-chat-history-row:hover
+  .an-chat-history-row__menu-trigger--pinned,
+.chat-sidebar-history.an-chat-history--rail
+  .an-chat-history-row:focus-within
+  .an-chat-history-row__menu-trigger--pinned,
+.chat-sidebar-history.an-chat-history--rail
+  .an-chat-history-row__menu-trigger--pinned[aria-expanded="true"] {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+@keyframes chat-sidebar-title-reveal {
+  to {
+    transform: translateX(calc(-1 * var(--chat-sidebar-title-shift, 0px)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .an-chat-history-row:hover .chat-sidebar-thread-title__content {
+    animation: none;
+  }
+}
+
+.chat-sidebar-history.an-chat-history--rail
+  .an-chat-history-row--active
+  .an-chat-history-row__button {
+  background: hsl(var(--sidebar-accent));
+  color: hsl(var(--sidebar-accent-foreground));
+}
+
+.dark {
+  --background: 0 0% 13%;
+  --foreground: 0 0% 90%;
+  --card: 0 0% 16.47%;
+  --card-foreground: 0 0% 90%;
+  --popover: 0 0% 15%;
+  --popover-foreground: 0 0% 90%;
+  --primary: 0 0% 75%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 0 0% 16%;
+  --muted-foreground: 0 0% 60%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 0 0% 90%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 24%;
+  --input: 0 0% 24%;
+  --ring: 0 0% 60%;
+  --radius: 0.5rem;
+  --sidebar-background: 0 0% 10%;
+  --sidebar-foreground: 0 0% 60%;
+  --sidebar-primary: 0 0% 75%;
+  --sidebar-primary-foreground: 0 0% 10%;
+  --sidebar-accent: 0 0% 16%;
+  --sidebar-accent-foreground: 0 0% 90%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-ring: 0 0% 60%;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter Variable", "Inter", sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.22);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.34);
+}
+
+/* Ask Anji in the extension side panel: a manager's chat, not a developer
+   console. No execution-mode toggle or context attachments. */
+.angel-ask .agent-composer-mode-button,
+.angel-ask button[aria-label="Add context"] {
+  display: none !important;
+}
+
+/* Ask Anji wears Anji's own tokens (app/packages/ui-tokens: dark theme and
+   residentVoiceTokens) so it reads as one conversation with the side panel:
+   near-black canvas, Anji teal for the send button and links, Geist type.
+   Scoped to the /angel/ask document only. */
+@font-face {
+  font-family: "Geist Variable";
+  src: url("/fonts/geist-latin-wght-normal.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root:has(.angel-ask),
+.angel-ask.dark {
+  color-scheme: dark;
+  --background: 220 12% 4.9%; /* #0b0c0e */
+  --foreground: 240 6% 92.9%; /* #ececee */
+  --card: 228 9% 8.6%; /* #141518 */
+  --card-foreground: 240 6% 92.9%;
+  --popover: 228 9% 8.6%;
+  --popover-foreground: 240 6% 92.9%;
+  --primary: 178 100% 37.1%; /* Anji teal #00bdb6 */
+  --primary-foreground: 220 12% 4.9%;
+  --secondary: 227 12% 15.1%; /* #22242b */
+  --secondary-foreground: 240 6% 92.9%;
+  --muted: 227 12% 15.1%;
+  --muted-foreground: 240 3% 56.9%; /* #8e8e94 */
+  --accent: 227 12% 15.1%;
+  --accent-foreground: 240 6% 92.9%;
+  --destructive: 13 64% 66.3%; /* Anji terracotta */
+  --destructive-foreground: 220 12% 4.9%;
+  --border: 225 12% 13.3%; /* #1e2026 */
+  --input: 225 12% 20.4%; /* #2e313a */
+  --ring: 178 100% 37.1%;
+  --success: 137 55% 55%;
+  --radius: 0.75rem;
+  --sidebar-background: 220 12% 4.9%;
+  --sidebar-foreground: 240 3% 56.9%;
+  --sidebar-border: 225 12% 13.3%;
+  --font-sans: "Geist Variable", Inter, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --agent-kit-density-font-size: 0.875rem;
+  --agent-kit-density-line-height: 1.375rem;
+  --agent-kit-composer-font-size: 0.875rem;
+  --agent-kit-composer-radius: 0.875rem;
+  --agent-kit-composer-surface: hsl(228 9% 8.6%);
+  --agent-kit-composer-border-color: hsl(225 12% 20.4%);
+  --agent-kit-composer-focus-border-color: hsl(178 100% 37.1% / 0.7);
+  --agent-kit-composer-elevation: none;
+  --agent-kit-shadow-color: 220 12% 2%;
+  background: #0b0c0e;
+}
+
+:root:has(.angel-ask) body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+.angel-ask ::selection {
+  background: #00bdb6;
+  color: #0b0c0e;
+}
+
+.angel-ask .agentkit-chat {
+  --agentkit-chat-background: #0b0c0e;
+  --agent-kit-composer-surface: #141518;
+  --agent-kit-composer-border-color: #2e313a;
+  --agent-kit-composer-focus-border-color: color-mix(
+    in srgb,
+    #00bdb6 70%,
+    transparent
+  );
+  --agentkit-transcript-message-line-height: 1.55;
+}
+
+/* The manager's own words: Anji's raised card colour, like the panel chips. */
+.angel-ask .agentkit-message[data-role="user"] .agentkit-message-content {
+  background: #22242b;
+  border-radius: 14px 14px 4px 14px;
+}
+
+/* Citations point at the care system's page: teal, underlined softly. */
+.angel-ask .agentkit-message-content a {
+  color: #00bdb6;
+  text-decoration-color: color-mix(in srgb, #00bdb6 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.angel-ask .agentkit-message-content a:hover {
+  text-decoration-color: #00bdb6;
+}
+
+/* Suggested questions: the panel's chip shape. */
+.angel-ask .agentkit-suggestions button {
+  padding: 0.375rem 0.75rem;
+  background: #22242b;
+  color: #c4c5ca;
+  font-size: 0.75rem;
+}
+
+.angel-ask .agentkit-suggestions button:hover {
+  border-color: color-mix(in srgb, #00bdb6 55%, transparent);
+  color: #ececee;
+}
+
+.angel-ask textarea::placeholder {
+  color: #6f7076;
+}
+
+.angel-ask textarea,
+.angel-ask [contenteditable="true"] {
+  caret-color: #00bdb6;
+}
