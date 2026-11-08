@@ -14,5 +14,7 @@ The extension is a thin shell with two seams:
   for everything else. `AgentNativeBackend` (`src/backend/agent-native.js`)
   calls the app's actions over HTTP and follows its live change stream.
 
-To point the extension at another app address, set `backendUrl` in the
-extension's `chrome.storage.local`.
+To point the extension at another app address, add that address to
+`host_permissions` (and the Care Desk `content_scripts` matches) in
+`manifest.json`, and set `backendUrl` in the extension's
+`chrome.storage.local`.
