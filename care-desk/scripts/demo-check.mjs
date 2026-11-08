@@ -287,15 +287,15 @@ try {
   const carerText = (await panelText(panel)) || "";
   check("Story 1: the shift page switches Anji to the carer's view", carer.value && /Logs/.test(await page.textContent(".top nav a.on")));
   check("Story 1: the manager's question is at the top of the carer's view", /From the manager.*Margaret: no fluid record found/s.test(carerText));
-  check("Story 1: still to record lists what the plans expect", /Margaret: 0 of 1,500 ml so far today/.test(carerText) && (!/\b(1[4-9]|2\d):/.test(new Date().toLocaleTimeString("en-GB", { timeZone: "Europe/London" })) || /Jane: lunch not recorded yet/.test(carerText)));
-  const note = "Margaret drank 200 ml of tea. Jane had all her lunch and 150 ml of water.";
+  check("Story 1: still to record lists what the plans expect", (new Date().toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour12: false }) < "07:01" || /Margaret: 0 of 1,500 ml so far today/.test(carerText)) && (!/\b(1[4-9]|2\d):/.test(new Date().toLocaleTimeString("en-GB", { timeZone: "Europe/London" })) || /Jane: lunch not recorded yet/.test(carerText)));
+  const note = "Margaret drank 200 ml of tea. Jane had all her lunch and drank 150 ml of water.";
   await panel.evaluate(`(() => { const t = document.querySelector("textarea[data-shift]"); t.value = ${JSON.stringify(note)}; t.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
   await clickPanel(panel, `[data-act="preview-note"]`);
   const items = await waitFor("preview", () => panel.evaluate(`(() => { const l = [...document.querySelectorAll(".items li")].map((li) => li.textContent.replace(/\\s+/g, " ").trim()); return l.length ? l : null; })()`));
   check("Story 1: one note becomes one record per resident per item, shown before saving", items.value?.length === 3 && /Margaret\s*Fluid · 200 ml/.test(items.value[0]) && /Jane\s*Food · Lunch · All/.test(items.value[1]) && /Jane\s*Fluid · 150 ml/.test(items.value[2]), (items.value || []).join(" | "));
   await shot(page, panel, "8-shift-preview");
   await clickPanel(panel, `[data-act="save-note"]`);
-  const saved = await waitFor("saved", async () => /Saved 3 records to Care Desk\. Answered 1 request from the manager/.test((await panelText(panel)) || ""), 10000);
+  const saved = await waitFor("saved", async () => /Saved 3 records to Care Desk\. Replied to 1 request from the manager/.test((await panelText(panel)) || ""), 10000);
   const rows = await waitFor("page rows", () => page.$$eval("#shift-records tbody tr", (trs) => trs.map((t) => t.textContent)).then((r) => (r.filter((t) => /via Anji/.test(t)).length >= 3 ? r : null)).catch(() => null), 8000);
   check("Story 1: Save writes the records to Care Desk's own page, marked via Anji", saved.value && rows.value);
   const after = (await panelText(panel)) || "";
@@ -305,9 +305,61 @@ try {
 
   // The loop closes: the manager's list shows the answer.
   await page.goto(`${APP}/desk`);
-  const closed = await waitFor("loop closed", async () => /Answered by the shift at \d\d:\d\d: Drank 200 ml of tea/.test((await panelText(panel)) || ""));
+  const closed = await waitFor("loop closed", async () => /Reply from the shift at \d\d:\d\d: Drank 200 ml of tea/.test((await panelText(panel)) || ""));
   check("Stories meet: the manager's question closes itself on the carer's record", closed.value);
   await shot(page, panel, "10-loop-closed");
+
+  // Reliability regressions: normal page navigation, real side-panel preview/save.
+  await action("reset-demo", {});
+  await page.goto(`${APP}/desk/residents/res-margaret`);
+  await waitFor("fresh gap", async () => (await pageTags(page)).includes("No record found yesterday after 14:00"));
+  await clickPanel(panel, `[data-act="ask-shift"]`);
+  await waitFor("asked", async () => /Waiting for a relevant reply/.test((await panelText(panel)) || ""));
+  await page.goto(`${APP}/desk/shift`);
+  await waitFor("shift ready", () => panel.evaluate(`Boolean(document.querySelector("textarea[data-shift]"))`));
+  async function previewNote(text) {
+    await panel.evaluate(`(() => { const t = document.querySelector("textarea[data-shift]"); t.value = ${JSON.stringify(text)}; t.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+    await clickPanel(panel, `[data-act="preview-note"]`);
+    await waitFor("preview ready", () => panel.evaluate(`Boolean(document.querySelector(".items li"))`));
+    return panel.evaluate(`[...document.querySelectorAll(".items li")].map(e => e.innerText)`);
+  }
+  for (const phrase of ["did not drink 200 ml", "refused the 200 ml tea", "offered 200 ml"]) {
+    const preview = await previewNote(`Margaret ${phrase}.`);
+    check(`Reliability preview: ${phrase}`, preview.length === 1 && !preview[0].includes("Fluid · 200 ml") && !/Drank (refused|offered)/.test(preview[0]), preview.join(" | "));
+    await clickPanel(panel, `[data-act="edit-note"]`);
+  }
+  await previewNote("Margaret refused the 200 ml tea.");
+  await clickPanel(panel, `[data-act="save-note"]`);
+  await waitFor("refusal saved", async () => /Saved 1 record/.test((await panelText(panel)) || ""));
+  check("Reliability: refusal saved as original wording in Care Desk", (await waitFor("refusal row", async () => /Refused the 200 ml tea/.test(await page.textContent("#shift-records")))).value);
+  await page.goto(`${APP}/desk/residents/res-margaret`);
+  const followup = await waitFor("follow-up", async () => (await pageTags(page)).some(t => /intake still needs follow-up/.test(t)));
+  check("Reliability: refusal replies to manager but stays amber with follow-up", followup.value && /Reply received.*Follow-up still needed/s.test((await panelText(panel)) || "") && !(await page.$(".angel-recorded")));
+  check("Reliability: unknown intake is not displayed as confirmed zero", !/Recorded 0 ml|Confirmed intake recorded today: 0 ml/.test((await panelText(panel)) || ""));
+  await shot(page, panel, "11-refusal-follow-up");
+  await page.goto(`${APP}/desk/shift`);
+  await waitFor("shift again", () => panel.evaluate(`Boolean(document.querySelector("textarea[data-shift]"))`));
+  const mixed = await previewNote("Margaret refused 200 ml tea then drank 80 ml water. Arthur ate all his breakfast.");
+  check("Reliability: refusal, actual intake and another resident stay separate", mixed.length === 3 && /not consumed/.test(mixed[0]) && /80 ml/.test(mixed[1]) && /Arthur/.test(mixed[2]), mixed.join(" | "));
+  await shot(page, panel, "12-mixed-note-preview");
+  await clickPanel(panel, `[data-act="save-note"]`);
+  await waitFor("mixed saved", async () => /Saved 3 records/.test((await panelText(panel)) || ""));
+  await page.goto(`${APP}/desk/residents/res-margaret`);
+  check("Reliability: only the 80 ml actually drunk becomes a green record", (await waitFor("80 ml", async () => (await pageTags(page)).some(t => /^Recorded 80 ml/.test(t)))).value);
+
+  await clickPanel(panel, `[data-act="suggest"]`);
+  await waitFor("draft", () => page.$(".angel-revise"));
+  await clickPanel(panel, `[data-act="edit"]`);
+  const unrelated = "Margaret likes the curtains open in the morning.";
+  await panel.evaluate(`(() => { const t = document.querySelector("textarea[data-edit]"); t.value = ${JSON.stringify(unrelated)}; t.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+  await clickPanel(panel, `[data-act="accept-edit"]`);
+  await waitFor("unrelated readback", async () => /Saved in Care Desk and read back from the page/.test((await panelText(panel)) || ""));
+  await waitFor("updated check arrives", async () => /still needs review/.test((await panelText(panel)) || "") && (await page.textContent("#care-plan")).includes(unrelated));
+  const finalPanel = (await panelText(panel)) || "";
+  check("Reliability: unrelated edited plan is saved without declaring the concern resolved", (await page.textContent("#care-plan")).includes(unrelated) && /still needs review/.test(finalPanel) && !/plan now reflects it/.test(finalPanel));
+  const updatedColour = await page.$eval(".angel-tag-updated", e => getComputedStyle(e).backgroundColor);
+  check("Reliability: plan update is amber, not the green recorded state", updatedColour === "rgb(255, 240, 205)", updatedColour);
+  await shot(page, panel, "13-plan-updated-not-resolved");
 
   // Optional: the agent in the side panel (needs a model key; costs a little).
   if (process.env.WITH_AGENT) { // guard:allow-env-credential — opt-in test flag

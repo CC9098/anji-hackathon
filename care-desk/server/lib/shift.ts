@@ -45,7 +45,12 @@ function namesIn(text: string, residents: Resident[]) {
 }
 
 function summaryOf(p: ParsedObservation) {
-  if (p.category === "Fluid") return p.fluidMl ? `Fluid · ${p.fluidMl} ml` : "Fluid · amount not said";
+  if (p.category === "Fluid") {
+    if (p.fluidMl !== null) return `Fluid · ${p.fluidMl} ml`;
+    if (p.fluidStatus === "not-consumed") return "Fluid · not consumed · no intake amount recorded";
+    if (p.fluidStatus === "offered") return "Fluid · offered · intake not confirmed";
+    return "Fluid · amount awaiting confirmation";
+  }
   if (p.category === "Food") return ["Food", p.meal, p.portion].filter(Boolean).join(" · ");
   return "Note";
 }
@@ -62,6 +67,7 @@ export function splitShiftNote(text: string, residents: Resident[]): ShiftPrevie
     .map((s) => s.trim().replace(/[.!?;]+$/, ""))
     .filter(Boolean);
   for (const s of sentences) {
+    let previousDrink = false;
     // Clauses joined by "and", "then" or a comma; a fragment with nothing
     // recordable of its own ("with milk") stays with the one before it.
     const fragments: string[] = [];
@@ -89,9 +95,11 @@ export function splitShiftNote(text: string, residents: Resident[]): ShiftPrevie
       const named = namesIn(said, residents);
       if (named.length > 1) {
         notSaved.push({ said, reason: "More than one resident in one item. Say one name per item." });
+        current = null;
+        previousDrink = false;
         continue;
       }
-      if (named.length === 1) current = named[0];
+      if (named.length === 1) { current = named[0]; previousDrink = false; }
       if (!current) {
         notSaved.push({ said, reason: "No resident named. Start with their first name." });
         continue;
@@ -104,9 +112,10 @@ export function splitShiftNote(text: string, residents: Resident[]): ShiftPrevie
         notSaved.push({ said, reason: "Nothing to record after the name." });
         continue;
       }
-      const parsed = parseObservation(words);
-      const spoken =
-        parsed.category === "Fluid" && !/\b(drank|drink|drinks|sipped|had|took)\b/i.test(words) ? `drank ${words}` : words;
+      const continuation = previousDrink && /^\s*\d+(?:\.\d+)?\s*(?:ml|litres?|l)\b/i.test(words);
+      const spoken = continuation ? `drank ${words}` : words;
+      const parsed = parseObservation(spoken);
+      previousDrink = parsed.fluidStatus === "consumed";
       const note =
         parsed.category === "Food" && parsed.meal
           ? `${parsed.meal}: ${sentence(spoken)}`
@@ -205,11 +214,17 @@ function targetMl(lineText: string): number | null {
   return ml ? Number(ml[1]) : null;
 }
 
-/** An ask is answered by the first matching record after it was asked. */
+/** A reply is the first relevant care observation after the ask; it does not resolve a care target. */
 export function answerFor(ask: Ask, records: Observation[]): AskState["answeredBy"] {
   const category = ASK_CATEGORY[ask.kind];
   const match = records
     .filter((o) => o.residentId === ask.residentId && o.category === category && o.recordedAt > ask.askedAt)
+    .filter((o) => {
+      if (ask.kind === "fluid") return ["consumed", "not-consumed", "offered"].includes(parseObservation(o.note).fluidStatus ?? "");
+      if (ask.kind === "appetite") return /\b(ate|eaten|had|refused|declined|offered)\b/i.test(o.note);
+      if (ask.kind === "sleep") return /\b(awake|asleep|slept|woke|waking)\b/i.test(o.note);
+      return false;
+    })
     .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))[0];
   return match
     ? { recordId: match.id, note: match.note, at: match.recordedAt, by: match.recordedBy, source: match.source }
@@ -246,21 +261,22 @@ export async function shiftStillDue(now = new Date()) {
   const wakingShare = Math.min(1, Math.max(0, (hour - WAKING_START) / (WAKING_END - WAKING_START)));
   const nowClock = clock(now.toISOString());
   const due: DueItem[] = [];
-  const fluidToday: Array<{ residentId: string; residentName: string; ml: number; target: number | null }> = [];
+  const fluidToday: Array<{ residentId: string; residentName: string; ml: number; unknownAmount: boolean; target: number | null }> = [];
 
   for (const r of residents) {
     const mine = records.filter((o) => o.residentId === r.id && daysAgo(o.recordedAt, now) === 0);
     const fluidLine = lines.find((l) => l.residentId === r.id && l.checkKind === "fluid");
     const target = fluidLine ? targetMl(fluidLine.text) : null;
     const ml = mine.filter((o) => o.category === "Fluid").reduce((s, o) => s + (o.fluidMl ?? 0), 0);
-    fluidToday.push({ residentId: r.id, residentName: r.preferredName, ml, target });
+    const unknownAmount = mine.some((o) => o.category === "Fluid" && o.fluidMl === null);
+    fluidToday.push({ residentId: r.id, residentName: r.preferredName, ml, unknownAmount, target });
     if (target && ml < target * wakingShare * FLUID_BEHIND) {
       due.push({
         residentId: r.id,
         residentName: r.preferredName,
         room: r.room,
         kind: "fluid",
-        text: `${r.preferredName}: ${ml} of ${target.toLocaleString("en-GB")} ml so far today`,
+        text: unknownAmount ? `${r.preferredName}: ${ml ? `${ml} ml confirmed; ` : ""}intake amount awaiting confirmation (daily target ${target.toLocaleString("en-GB")} ml)` : `${r.preferredName}: ${ml} of ${target.toLocaleString("en-GB")} ml so far today`,
         detail: `Care plan: ${fluidLine!.text}`,
         prompt: `${r.preferredName} drank `,
       });

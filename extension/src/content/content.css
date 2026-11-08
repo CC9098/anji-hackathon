@@ -77,3 +77,6 @@ tr.angel-focus > td { background-color: inherit; }
   .angel-flash, .angel-focus { animation: none; }
   .angel-launcher { transition: none; }
 }
+
+/* A saved plan is an update, not evidence of a resolved care concern. */
+.angel-tag-updated { background: #fff0cd; color: #7c5400; }

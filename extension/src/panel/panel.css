@@ -199,3 +199,7 @@ body.chatting:has(.chat:not([hidden])) main { flex: 0 1 auto; max-height: 36vh; 
 .due p { margin: 0; }
 .due-fluid > div > p:first-child::before, .due-meal > div > p:first-child::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--change); margin-right: 8px; vertical-align: 1px; }
 .due .link { white-space: nowrap; }
+
+.pill-updated { background: var(--change-soft); color: var(--change); }
+.check-updated blockquote { border-color: var(--change); }
+.check-updated .check-label { color: var(--change); }

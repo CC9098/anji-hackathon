@@ -291,7 +291,7 @@ function saveNote() {
     const answered = result.answered.length;
     state.notice = {
       tone: "ok",
-      text: `Saved ${n} record${n === 1 ? "" : "s"} to Care Desk.${answered ? ` Answered ${answered} request${answered === 1 ? "" : "s"} from the manager.` : ""}`,
+      text: `Saved ${n} record${n === 1 ? "" : "s"} to Care Desk.${answered ? ` Replied to ${answered} request${answered === 1 ? "" : "s"} from the manager.` : ""}`,
     };
     state.shiftNote = "";
     state.shiftPreview = null;
@@ -550,9 +550,9 @@ function renderChecks(brief) {
 function renderAsk(c) {
   if (!state.backend?.askTheShift) return "";
   if (c.ask?.answered) {
-    return `<p class="small ok-text">Asked the shift at ${esc(c.ask.time)}. Answered at ${esc(c.ask.answered.time)} by ${esc(c.ask.answered.by)}.</p>`;
+    return `<p class="small muted">Asked the shift at ${esc(c.ask.time)}. Reply received at ${esc(c.ask.answered.time)} by ${esc(c.ask.answered.by)}. ${c.state === "gap" ? "Follow-up still needed." : "Care targets are checked separately."}</p>`;
   }
-  if (c.ask) return `<p class="small muted">Asked the shift at ${esc(c.ask.time)}. Closes itself when a record arrives.</p>`;
+  if (c.ask) return `<p class="small muted">Asked the shift at ${esc(c.ask.time)}. Waiting for a relevant reply; care targets are checked separately.</p>`;
   if (c.state !== "gap") return "";
   return `<div class="row"><button class="btn" data-act="ask-shift" data-line="${esc(c.lineId)}" ${state.busy ? "disabled" : ""}>Ask the shift</button></div>`;
 }
@@ -599,7 +599,7 @@ function renderHome() {
     if (p.kind === "note") return "";
     return `<button class="btn btn-sm" data-act="jump" data-id="${id}" data-line="${line}" ${busy}>Show me</button>`;
   };
-  const kindLabel = (p) => (p.kind === "safety" ? "Safety" : p.kind === "change" ? "Change" : "Done");
+  const kindLabel = (p) => (p.kind === "safety" ? "Safety" : p.kind === "change" ? "Change" : "Reply");
   const rows = o.flagged
     .map(
       (row) => `<li class="resident">

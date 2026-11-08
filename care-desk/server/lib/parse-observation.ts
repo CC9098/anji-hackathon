@@ -4,6 +4,7 @@
 export type ParsedObservation = {
   category: "Fluid" | "Food" | "Note";
   fluidMl: number | null;
+  fluidStatus?: "consumed" | "not-consumed" | "offered" | "unclear";
   portion: string | null;
   meal: string | null;
 };
@@ -17,15 +18,36 @@ const PORTIONS: Array<[RegExp, string]> = [
 ];
 
 export function parseObservation(text: string): ParsedObservation {
-  const ml = text.match(/(\d{2,4})\s*(ml|millilit(re|er)s?)\b/i);
-  const litres = text.match(/(\d+(?:\.\d+)?)\s*(l|litres?|liters?)\b/i);
-  const amount = ml
-    ? Number(ml[1])
-    : litres
-      ? Math.round(Number(litres[1]) * 1000)
-      : null;
-  if (amount !== null || /\b(drank|drink|sipped|cup of|tea|water|squash|juice)\b/i.test(text)) {
-    return { category: "Fluid", fluidMl: amount, portion: null, meal: null };
+  if (/\b(ml|millilitres?|milliliters?|litres?|liters?|drank|drink|drinking|sipped|cup of|tea|water|squash|juice)\b/i.test(text)) {
+    const clauses = text.split(/\s+(?:and then|then|but|and)\s+|[;.!?](?:\s+|$)/i).filter(Boolean);
+    let previousConsumed = false;
+    let consumed = false;
+    let unknown = false;
+    let total = 0;
+    let status: NonNullable<ParsedObservation["fluidStatus"]> = "unclear";
+    for (const clause of clauses) {
+      // An amount describes intake only when the words say it was consumed.
+      // A bare amount may continue an explicit drink, never an offer/refusal.
+      const negative = /\b(no|not|never|didn't|didn’t|hasn't|hasn’t|refused|declined|spilled|spilt)\b/i.test(clause);
+      const offered = /\b(offered|provided|served|prepared|poured|left)\b/i.test(clause);
+      const uncertain = /\b(may|might|maybe|perhaps|possibly|unsure|uncertain|could|would|will|should|to drink)\b/i.test(clause);
+      const affirmative = /\b(drank|sipped|consumed|finished|had|took)\b/i.test(clause);
+      const continuation: boolean = previousConsumed && /^\s*(?:about\s+)?\d/i.test(clause);
+      const amounts = [...clause.matchAll(/(\d+(?:\.\d+)?)\s*(ml|millilit(?:re|er)s?|l|litres?|liters?)\b/gi)];
+      const actual: boolean = !negative && !offered && !uncertain && (affirmative || continuation);
+      previousConsumed = actual;
+      if (actual) {
+        consumed = true;
+        // Multiple quantities in one clause have ambiguous scope (offered vs drunk,
+        // or a correction). Keep the original wording for the carer to clarify.
+        if (amounts.length !== 1) unknown = true;
+        else total += Number(amounts[0][1]) * (/^m/i.test(amounts[0][2]) ? 1 : 1000);
+      } else if (negative) status = "not-consumed";
+      else if (offered) status = "offered";
+      else unknown = true;
+    }
+    return { category: "Fluid", fluidMl: consumed && !unknown ? Math.round(total) : null,
+      fluidStatus: consumed ? "consumed" : status, portion: null, meal: null };
   }
   if (/\b(ate|eaten|breakfast|lunch|supper|dinner|meal|snack)\b/i.test(text)) {
     const meal = text.match(/\b(breakfast|lunch|supper|dinner|snack)\b/i)?.[1] ?? null;

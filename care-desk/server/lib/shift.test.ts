@@ -27,6 +27,6 @@ describe("splitShiftNote", () => {
   });
 
   it("does not invent an amount the carer did not say", () => {
-    expect(summaries("Margaret had a cup of tea.")).toEqual(["Margaret: Fluid · amount not said"]);
+    expect(summaries("Margaret had a cup of tea.")).toEqual(["Margaret: Fluid · amount awaiting confirmation"]);
   });
 });

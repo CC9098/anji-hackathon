@@ -9,7 +9,9 @@
       "cd_residents": "Single synthetic demo home; agent SQL tools are denied and all reads and writes go through typed actions.",
       "cd_care_plan_lines": "Single synthetic demo home; agent SQL tools are denied and all reads and writes go through typed actions.",
       "cd_observations": "Single synthetic demo home; agent SQL tools are denied and all reads and writes go through typed actions.",
-      "cd_plan_drafts": "Single synthetic demo home; agent SQL tools are denied and all reads and writes go through typed actions."
+      "cd_plan_drafts": "Single synthetic demo home; agent SQL tools are denied and all reads and writes go through typed actions.",
+      "cd_page_focus": "Single synthetic demo home; agent SQL tools are denied and all reads and writes go through typed actions.",
+      "cd_shift_asks": "Single synthetic demo home; agent SQL tools are denied and all reads and writes go through typed actions."
     }
   }
 }

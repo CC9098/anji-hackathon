@@ -11,6 +11,7 @@ export default defineAction({
     draftId: z.string().describe("Pending suggestion id"),
     finalText: z
       .string()
+      .trim()
       .min(10)
       .max(800)
       .optional()
@@ -58,6 +59,9 @@ export default defineAction({
       .select({ text: schema.carePlanLines.text })
       .from(schema.carePlanLines)
       .where(eq(schema.carePlanLines.id, line.id));
+    if (!saved || saved.text !== text) {
+      fail("The saved plan could not be verified. Read the current plan before trying again.", { errorCode: "readback_mismatch", statusCode: 409 });
+    }
     return {
       id: draftId,
       lineId: line.id,

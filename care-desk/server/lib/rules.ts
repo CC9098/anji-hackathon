@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gte } from "drizzle-orm";
 
 import { getDb, schema } from "../db/index.js";
 import type { DraftEvidence, PageTarget } from "../db/schema.js";
+import { parseObservation } from "./parse-observation.js";
 import { ensureSeeded } from "./seed.js";
 import { listAsks, type AskState } from "./shift.js";
 import {
@@ -31,7 +32,7 @@ export type PlanCheck = {
   section: string;
   lineText: string;
   kind: "fluid" | "appetite" | "sleep";
-  /** gap: no record found; recorded: closed by a record; drift: off their usual; updated: plan caught up */
+  /** gap: missing or unconfirmed intake; recorded: positive intake record; drift: off their usual; updated: saved plan verified */
   state: "gap" | "recorded" | "drift" | "updated";
   safety: boolean;
   label: string;
@@ -154,7 +155,7 @@ async function loadResidents(residentId?: string): Promise<ResidentData[]> {
   }));
 }
 
-function fluidCheck(
+export function fluidCheck(
   line: PlanLine,
   data: ResidentData,
   now: Date,
@@ -173,7 +174,8 @@ function fluidCheck(
   const todayMl = fluids
     .filter((o) => daysAgo(o.recordedAt, now) === 0)
     .reduce((sum, o) => sum + (o.fluidMl ?? 0), 0);
-  const totalLine = `Recorded today so far: ${todayMl} ml.`;
+  const unknownToday = fluids.some((o) => daysAgo(o.recordedAt, now) === 0 && o.fluidMl === null);
+  const totalLine = `${unknownToday && todayMl === 0 ? "No intake amount confirmed today." : `Confirmed intake recorded today: ${todayMl} ml.`}${unknownToday ? " Some records have no confirmed intake amount; this is not a complete total." : ""} This does not confirm the daily target has been met.`;
   if (!last) {
     return {
       ...base,
@@ -205,20 +207,30 @@ function fluidCheck(
       evidence,
     };
   }
+  const parsed = parseObservation(last.note);
+  if (last.fluidMl === null || last.fluidMl <= 0 || parsed.fluidStatus !== "consumed") {
+    return {
+      ...base,
+      state: "gap",
+      label: `New fluid record, ${clock(last.recordedAt)}; intake still needs follow-up`,
+      detail: `${last.note} No positive intake amount confirmed by this record. ${totalLine}`,
+      evidence,
+    };
+  }
   return {
     ...base,
     state: "recorded",
-    label: `Recorded ${last.fluidMl ?? 0} ml, ${clock(last.recordedAt)}`,
+    label: `Recorded ${last.fluidMl} ml, ${clock(last.recordedAt)}`,
     detail: `${last.note} Recorded ${whenLabel(last.recordedAt, now)} via ${last.source}. ${totalLine}`,
     evidence,
   };
 }
 
-function lastPlanUpdate(line: PlanLine, data: ResidentData, now: Date) {
+export function lastPlanUpdate(line: PlanLine, data: ResidentData, now: Date) {
   const accepted = data.decided.find(
     (d) => d.lineId === line.id && d.status === "accepted",
   );
-  if (accepted && daysAgo(line.updatedAt, now) <= RECENT_DAYS) {
+  if (accepted && accepted.finalText === line.text && accepted.decidedAt === line.updatedAt && daysAgo(line.updatedAt, now) >= 0 && daysAgo(line.updatedAt, now) <= RECENT_DAYS) {
     return {
       state: "updated" as const,
       label: `Plan updated ${whenLabel(line.updatedAt, now)}`,
@@ -227,7 +239,7 @@ function lastPlanUpdate(line: PlanLine, data: ResidentData, now: Date) {
   return null;
 }
 
-function appetiteCheck(
+export function appetiteCheck(
   line: PlanLine,
   data: ResidentData,
   now: Date,
@@ -287,7 +299,7 @@ function appetiteCheck(
       state: "updated",
       safety: false,
       label: updated.label,
-      detail: `Eating less than usual for ${days} days; the plan now reflects it.`,
+      detail: `Eating less than usual for ${days} days; the edited plan was saved and read back. The eating pattern still needs review; a plan update does not establish that it is resolved.`,
       evidence,
       draft: null,
     };
@@ -407,7 +419,7 @@ function checkToPoint(check: PlanCheck): KeyPoint | null {
       ask: check.ask,
     };
   }
-  if (check.state === "drift") {
+  if (check.state === "drift" || check.state === "updated") {
     return {
       kind: "change",
       text: `${check.label}.`,
@@ -492,14 +504,13 @@ export async function homeOverview() {
   const [all, asks] = await Promise.all([loadResidents(), listAsks()]);
   const rows = all.map((data) => {
     const checks = checksFor(data, now, asks);
-    // A question to the shift that a record has since answered, so the
-    // manager sees it close without having to look for it.
+    // A relevant reply is shown separately from any remaining care concern.
     const answered: KeyPoint[] = checks
-      .filter((c) => c.ask?.answered && c.state !== "gap")
+      .filter((c) => c.ask?.answered)
       .map((c) => ({
         kind: "note" as const,
-        text: `Answered by the shift at ${c.ask!.answered!.time}: ${c.ask!.answered!.note}`,
-        detail: `Asked at ${c.ask!.time}. Recorded by ${c.ask!.answered!.by}.`,
+        text: `Reply from the shift at ${c.ask!.answered!.time}: ${c.ask!.answered!.note}`,
+        detail: `Asked at ${c.ask!.time}. Recorded by ${c.ask!.answered!.by}. ${c.state === "gap" ? "Follow-up still needed." : "A reply is not confirmation that the care target is met."}`,
         source: `Care plan, ${c.section}`,
         target: { kind: "plan" as const, lineText: c.lineText },
         lineId: c.lineId,

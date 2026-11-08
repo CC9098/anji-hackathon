@@ -1,0 +1,215 @@
+{
+  "ranAt": "2026-11-08T12:12:33.858Z",
+  "results": [
+    {
+      "name": "Overview opens on the Care Desk home page",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Overview lists only residents with something to look at, safety first",
+      "ok": true,
+      "detail": "140,347,445"
+    },
+    {
+      "name": "Moment 1: panel follows to Margaret",
+      "ok": true,
+      "detail": "107 ms"
+    },
+    {
+      "name": "Moment 1: know-her line quotes About me",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 1: first key point is safety",
+      "ok": true,
+      "detail": "Safety"
+    },
+    {
+      "name": "Linking: the chat sits under the briefing in one panel",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Linking: chat composer has no model picker and speaks to the manager",
+      "ok": true,
+      "detail": "set"
+    },
+    {
+      "name": "Moment 2: fluid line underlined with 'No record found yesterday after 14:00'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 2: annotation is on the fluid plan line",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Linking: a briefing source chip highlights its line on the page",
+      "ok": true,
+      "detail": "Offer at least 1.5 litres of fluid daily"
+    },
+    {
+      "name": "Linking: an About me chip highlights the quoted words on the page",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Linking: selecting text on the page offers 'Ask Anji about this'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 3: line turns green without a page refresh",
+      "ok": true,
+      "detail": "331 ms after the POST"
+    },
+    {
+      "name": "Moment 3: green class applied",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 4: appetite drift detected",
+      "ok": true,
+      "detail": "Eating less than usual for 3 days; plan last updated 27 Aug"
+    },
+    {
+      "name": "Moment 4: suggestion shown on the plan as red deletions and green insertions",
+      "ok": true,
+      "detail": "104 ms"
+    },
+    {
+      "name": "Moment 4: Dismiss removes the suggestion and leaves the plan unchanged",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 4: Edit then Accept writes the edited wording back to Care Desk",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 4: the read-back notice is in view",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 4: Edit on the page opens the editor in the side panel",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Moment 4: Accept from the page writes the suggestion back to Care Desk",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Unmatched plan line is reported in the panel only, without errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Story 2: the whole-home list offers Fix the plan and Ask the shift",
+      "ok": true,
+      "detail": "open:res-margaret ask-shift:res-margaret-plan-1 jump-fix:res-margaret-plan-3 open:res-john open:res-arthur jump:res-arthur-plan-3"
+    },
+    {
+      "name": "Story 2: Ask the shift is sent and shown on the list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Story 2: Fix the plan opens the resident with the fix drafted on the plan line",
+      "ok": true,
+      "detail": "222 ms, focus: Margaret eats well. Offer stan"
+    },
+    {
+      "name": "Story 1: the shift page switches Anji to the carer's view",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Story 1: the manager's question is at the top of the carer's view",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Story 1: still to record lists what the plans expect",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Story 1: one note becomes one record per resident per item, shown before saving",
+      "ok": true,
+      "detail": "MargaretFluid · 200 mlDrank 200 ml of tea. | JaneFood · Lunch · AllLunch: Had all her lunch. | JaneFluid · 150 mlDrank 150 ml of water."
+    },
+    {
+      "name": "Story 1: Save writes the records to Care Desk's own page, marked via Anji",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Story 1: the answered question and the recorded items leave the lists by themselves",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Stories meet: the manager's question closes itself on the carer's record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Reliability preview: did not drink 200 ml",
+      "ok": true,
+      "detail": "Margaret\nFluid · not consumed · no intake amount recorded\nDid not drink 200 ml."
+    },
+    {
+      "name": "Reliability preview: refused the 200 ml tea",
+      "ok": true,
+      "detail": "Margaret\nFluid · not consumed · no intake amount recorded\nRefused the 200 ml tea."
+    },
+    {
+      "name": "Reliability preview: offered 200 ml",
+      "ok": true,
+      "detail": "Margaret\nFluid · offered · intake not confirmed\nOffered 200 ml."
+    },
+    {
+      "name": "Reliability: refusal saved as original wording in Care Desk",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Reliability: refusal replies to manager but stays amber with follow-up",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Reliability: unknown intake is not displayed as confirmed zero",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Reliability: refusal, actual intake and another resident stay separate",
+      "ok": true,
+      "detail": "Margaret\nFluid · not consumed · no intake amount recorded\nRefused 200 ml tea. | Margaret\nFluid · 80 ml\nDrank 80 ml water. | Arthur\nFood · Breakfast · All\nBreakfast: Ate all his breakfast."
+    },
+    {
+      "name": "Reliability: only the 80 ml actually drunk becomes a green record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Reliability: unrelated edited plan is saved without declaring the concern resolved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Reliability: plan update is amber, not the green recorded state",
+      "ok": true,
+      "detail": "rgb(255, 240, 205)"
+    }
+  ]
+}
