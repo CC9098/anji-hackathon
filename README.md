@@ -1,19 +1,29 @@
 # Anji for Care Desk
 
-Anji is a Chrome side panel that sits beside a care-record system and does the
-cross-checking a care home manager has no time for. It is built on
-[Agent-Native](https://agent-native.com) for the Builder.io Agent-Native
-Hackathon (2026).
+**A side panel that reads a care home's records against its care plans, marks
+what the records do not back up, and suggests plan changes that only a person
+can accept.** Built on [Agent-Native](https://agent-native.com) for the
+Builder.io Agent-Native Hackathon (2026).
+
+_Demo video: link to be added._
+
+![Anji's side panel beside Care Desk. The fluid line on Margaret's care plan carries a yellow "No record found yesterday after 14:00" underline; the eating line shows a red drift note with a "Suggest an update" button.](care-desk/docs/screenshots/1-know-her-and-annotation.png)
+
+_The panel follows the page. It opens with a line quoted from Margaret's own
+About me, then today's points, safety first. On the care plan itself, the fluid
+line is underlined "No record found yesterday after 14:00" and the eating line
+"Eating less than usual for 3 days; plan last updated 27 Aug"._
 
 **Every resident, staff member, record and the home itself are synthetic.**
 Care Desk is a fictional care-record system made for this demo; nothing here
 connects to a real care system.
 
-- `care-desk/` — the Agent-Native app: Anji's brain (actions, rules, agent) and
-  Care Desk, the fictional care system it serves at `/desk` (Hollybrook House,
-  four synthetic residents).
-- `extension/` — the Anji Chrome extension (Manifest V3 side panel and content
-  script), version 0.2.0.
+## Three more moments
+
+| Carer: one note, several records | Manager: a plan change as tracked changes | Whole home at a glance |
+|---|---|---|
+| ![A carer's note "Margaret drank 200 ml of tea. Jane had all her lunch and 150 ml of water." split into three ticked records before saving.](care-desk/docs/readme/carer-note-split.png) | ![A suggested care-plan change shown inline on Care Desk as struck-through old wording and underlined new wording, with Accept, Edit and Dismiss buttons.](care-desk/docs/screenshots/7-fix-the-plan.png) | ![The resident list with the panel showing "3 of 4 residents need a look. Safety first.", each with a one-button action such as Ask the shift or Fix the plan.](care-desk/docs/screenshots/0-home-overview.png) |
+| A carer writes one note in their own words. Anji splits it into one record per resident per item and shows them before anything is saved. | Anji drafts new wording when a resident drifts from their own usual and the plan has not caught up. A person accepts, edits or dismisses it. | Only residents with something to look at, safety first, each with **Ask the shift** or **Fix the plan**. |
 
 ## What it does
 
@@ -28,19 +38,34 @@ connects to a real care system.
 - **Suggests, never decides.** When a resident drifts from their own usual and
   the plan has not caught up, Anji proposes new wording as tracked changes. A
   person accepts, edits or dismisses it.
-- **Carer view.** On the shift page a carer writes one note in their own words;
-  Anji splits it into one record per resident per item, shows it before saving,
-  and lists what the care plans still expect this shift.
+- **Carer view.** On the shift page (Care Desk's **Logs**) a carer writes one
+  note in their own words; Anji splits it into one record per resident per
+  item, shows it before saving, and lists what the care plans still expect
+  this shift.
 - **Whole home at a glance.** On the resident list, only residents with
   something to look at, safety first, each with a one-button "Fix the plan" or
   "Ask the shift".
 
 ## How Agent-Native is used: one set of actions, every surface
 
-Every capability is one `defineAction` in `care-desk/actions/`. The side-panel
-buttons (manager), the shift page (carer), the agent in the side panel
-("Ask Anji") and plain HTTP callers all run the same actions, so the agent, the
-panel and the page annotations always agree.
+Every capability is one `defineAction` in [`care-desk/actions/`](care-desk/actions).
+The manager's panel buttons, the carer view, the agent ("Ask Anji") and plain
+HTTP callers all run the same actions, so the agent, the panel and the page
+annotations always agree.
+
+```mermaid
+flowchart LR
+  M["Side panel, manager buttons"] -->|"HTTP /_agent-native/actions/name"| ACT
+  C["Side panel, carer view on Logs"] -->|HTTP| ACT
+  G["Ask Anji (the agent)"] -->|"tool calls"| ACT
+  H["Any HTTP caller, e.g. pnpm voice-note"] -->|HTTP| ACT
+  ACT["care-desk/actions (17 Care Desk actions)"] --> RULES["Deterministic rules (server/lib/rules.ts)"]
+  ACT --> DB[("Care Desk tables")]
+  M -->|"HTTP"| ACC["accept-plan-update (agentTool: false)"]
+  G -. "not one of its tools" .-x ACC
+  ACC --> DB
+  DB -. "live change stream" .-> M
+```
 
 | Action | What it does |
 |---|---|
@@ -66,15 +91,82 @@ The deterministic checks (fluid gaps, change against a resident's own usual)
 live in `care-desk/server/lib/rules.ts` and are reached only through these
 actions. The agent sees which resident is on screen through navigation state,
 cites records, and drafts plan changes by calling `draft-plan-update`; the
-suggestion reaches the page through the framework's live change stream.
+suggestion reaches the page through the framework's live change stream. The
+extension calls the same actions over HTTP
+([`extension/src/backend/agent-native.js`](extension/src/backend/agent-native.js)).
 
 ### Only a person can accept
 
-`care-desk/actions/accept-plan-update.ts` sets `agentTool: false`, so the agent
-cannot call it: Anji can suggest a care-plan change, but only a person can make
-it. `reset-demo.ts` is closed to the agent the same way. The agent's SQL tools
-are also denied on the Care Desk tables (`care-desk/agent-native.json`); all
-reads and writes go through typed actions.
+[`accept-plan-update.ts` line 20](care-desk/actions/accept-plan-update.ts#L20)
+sets `agentTool: false`, so the action is not registered as one of the agent's
+tools: Anji can suggest a care-plan change, but accepting it is a person
+pressing **Accept** in the panel. The same action refuses a suggestion that was
+already decided or whose plan line has changed since, and after saving it reads
+the line back and fails if the saved text does not match.
+[`reset-demo.ts` line 10](care-desk/actions/reset-demo.ts#L10) is closed to the
+agent the same way. The agent's instructions
+([`server/plugins/agent-chat.ts`](care-desk/server/plugins/agent-chat.ts)) also
+tell it that it only suggests and must not say the plan has changed.
+
+Care Desk data is read and written through typed actions. The six Care Desk
+tables have no per-user scope (one synthetic home), so
+[`care-desk/agent-native.json`](care-desk/agent-native.json) declares each of
+them in the `agent-native doctor` `dbToolScopingDenylist` with that reason, and
+the framework's own database tools stay in their default read-only mode (no
+`frameworkTools.database` override in this app).
+
+## Built to be trusted with care records
+
+A care record that says someone drank when they did not is worse than no
+record. On 8 November 2026 the carer-note rules and the plan checks were
+tightened ([reliability notes](care-desk/docs/reliability-20261108.md)):
+
+- **Negation, refusal and offers are not intake.** "Margaret did not drink
+  200 ml", "refused the 200 ml tea" and "offered 200 ml" never count as 200 ml.
+  In "refused 200 ml tea then drank 80 ml water", only the 80 ml counts.
+- **No invented amounts.** "200 ml water" with no verb, "may have had" and
+  "drank some water" stay unquantified; the carer can reword before saving.
+- **"Ask the shift" needs a relevant answer.** A record about another
+  resident, an older record or an ambiguous note does not close the request. A
+  refusal answers it but leaves the fluid line amber, and a green line does not
+  claim the daily target was met.
+- **"Plan updated" is checked, not assumed.** The plan line must still hold the
+  accepted wording and time. An unrelated accepted edit does not claim the
+  eating concern is resolved.
+
+Evidence from that run: 19/19 regression tests (`pnpm test`;
+[`reliability.test.ts`](care-desk/server/lib/reliability.test.ts),
+[`shift.test.ts`](care-desk/server/lib/shift.test.ts)) and 42/42 browser
+checks in real Chrome for Testing with the unpacked extension (`pnpm
+demo-check`; [results](care-desk/docs/checks/reliability-20261108.json)). The
+limits are written down in the same notes: parsing is conservative English
+rules, not general language understanding.
+
+## How this maps to the judging criteria
+
+- **Usefulness and execution.** A working app plus extension: the panel, page
+  underlines, live updates, tracked changes and carer view all run without a
+  model key. [`pnpm demo-check`](care-desk/scripts/demo-check.mjs) drives every
+  moment in a real browser; see [Try it](#3-try-it).
+- **Creativity and design.** Anji annotates the care system's own page instead
+  of adding another dashboard: underlines on plan lines, tracked changes inline,
+  source chips that scroll to the record. Wording is "No record found", never
+  "not done". [User stories](care-desk/docs/user-stories.md).
+- **Innovation (people and agents).** The agent finds, cites and drafts; people
+  decide. Accepting a plan change is closed to the agent in code
+  (`agentTool: false`), and a carer sees a split note before it is saved.
+- **Use of Agent-Native.** One set of actions serves the agent, the panel and
+  HTTP; navigation state tells the agent which resident is on screen;
+  `show-on-page` lets it point at the page; the live change stream updates the
+  page without a refresh.
+
+## Repository
+
+- `care-desk/` — the Agent-Native app: Anji's brain (actions, rules, agent) and
+  Care Desk, the fictional care system it serves at `/desk` (Hollybrook House,
+  four synthetic residents).
+- `extension/` — the Anji Chrome extension (Manifest V3 side panel and content
+  script), version 0.2.0.
 
 ## 1. Run the app
 
@@ -126,7 +218,7 @@ carer view) works without a key.
    plan update for Margaret's eating"). The suggestion appears on the plan as
    tracked changes. **Accept**, **Edit** or **Dismiss** it; Accept writes it
    back to Care Desk and Anji reads it back from the page.
-5. Open the **Shift** page for the carer view, or the resident list for the
+5. Open **Logs** (the shift page) for the carer view, or the resident list for the
    whole home.
 
 The chat and the page are linked: a source chip in the briefing scrolls the
