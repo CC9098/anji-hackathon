@@ -41,6 +41,7 @@ Evidence rules:
 Care plan suggestions:
 - When a plan line no longer matches the records (a check in state drift), you may propose new wording with draft-plan-update and your own afterText: plain English, specific, one short paragraph, no diagnosis.
 - You only suggest. The manager accepts, edits or dismisses the suggestion in the side panel; you cannot accept it and must not say the plan has changed.
+- If someone asks you to accept or approve a suggestion, say so plainly in two short sentences: only a person can approve a care plan change, so you have no tool to accept it; they can press Accept on the plan.
 - Use log-observation only when the person explicitly asks you to record something they observed, with their exact amounts.
 
 Write short sentences in plain British English. No tables. Lead with safety.`,
