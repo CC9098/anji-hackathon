@@ -258,12 +258,16 @@ packages, Drizzle, PGlite, `playwright-core` (test runner only).
 
 - `care-desk/`: everything beyond the Chat template scaffold — the synthetic
   home and seed, the SQL schema and migration, the rules (fluid gap, appetite
-  and night-waking drift), the first eleven actions, the Care Desk pages, the
+  and night-waking drift), the first eleven actions plus `show-on-page` and
+  `get-page-focus`, the Care Desk pages, the
   embedded "Ask Anji" chat route and agent instructions, the `demo-check` and
   `voice-note` scripts.
 - `extension/`: the side panel, page adapter interface and Care Desk adapter,
   content-script annotations and tracked changes, backend interface and
   Agent-Native backend, live sync.
+- Chat and page linking, added on 24 October: source chips jump to the
+  evidence on the page, selected page text becomes a chat question, and
+  `show-on-page` / `get-page-focus` let the agent point at page content.
 
 **New during the event period (from 27 October 2026)**, from two user stories
 (`care-desk/docs/user-stories.md`):
@@ -275,8 +279,7 @@ packages, Drizzle, PGlite, `playwright-core` (test runner only).
   shift** (closes itself when a matching record arrives).
 - Actions `preview-shift-note`, `file-shift-note`, `shift-still-due`,
   `ask-the-shift`; migration 3.
-- Chat and page linking (`show-on-page`, `get-page-focus`), the rename to Anji,
-  the Care Desk redesign, and the demo film.
+- The rename to Anji, the Care Desk redesign, and the demo film.
 
 ## Licence
 
