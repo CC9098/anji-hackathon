@@ -5,7 +5,7 @@ what the records do not back up, and suggests plan changes that only a person
 can accept.** Built on [Agent-Native](https://agent-native.com) for the
 Builder.io Agent-Native Hackathon (2026).
 
-_Demo video: link to be added._
+**Demo video (3 minutes): [watch on Clips](https://clips.agent-native.com/share/9WnsiHG5Bw7H)**. No sign-in needed.
 
 ![Anji's side panel beside Care Desk. The fluid line on Margaret's care plan carries a yellow "No record found yesterday after 14:00" underline; the eating line shows a red drift note with a "Suggest an update" button.](care-desk/docs/screenshots/1-know-her-and-annotation.png)
 
